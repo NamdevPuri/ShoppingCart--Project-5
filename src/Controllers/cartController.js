@@ -34,16 +34,14 @@ const addToCart = async function (req, res) {
             return res.status(400).send({ status: false, message: "Please provide valid requestBody" })
         }
 
-        if (!isValidObjectId(userId)) {
-            return res.status(400).send({ status: false, message: "please provide valid userId" })
+        if (!keyValid(userId) || !isValidObjectId(userId)) return res.status(400).send({ status: false, message: "Please enter UserId and also valid userId" })
 
-        }
         let { cartId, productId, quantity } = Data
 
         const findCart = await cartModel.findOne({ userId: userId })
         console.log(findCart)
         if (findCart) {
-           if (!cartId) return res.status(400).send({ status: false, message: "Please provide cart Id" })
+            if (!cartId) return res.status(400).send({ status: false, message: "Please provide cart Id" })
             if (findCart._id.toString() != cartId) return res.status(400).send({ status: false, message: "cartId doesn't belongs to user" })
         }
 
@@ -120,14 +118,18 @@ const updateProduct = async function (req, res) {
         let userId = req.params.userId
         //console.log(data)
 
+        if (!isValidRequestBody(data)) {
+            return res.status(400).send({ status: false, message: "Please provide valid requestBody" })
+        }
+
+        if (!keyValid(userId) || !isValidObjectId(userId)) return res.status(400).send({ status: false, message: "Please enter UserId and also valid userId" })
+
         const existUser = await userModel.findOne({ _id: userId })
         if (!existUser) return res.status(404).send({ status: false, message: "Please enter valid UserId" })
 
         //Authorization
         if (existUser._id.toString() != req.userId)
             return res.status(403).send({ status: false, message: `Unauthorized access! User's info doesn't match` })
-
-        if (!keyValid(userId) || !isValidObjectId(userId)) return res.status(400).send({ status: false, message: "Please enter vaild userId" })
 
         const { productId, cartId, removeProduct } = data
 
@@ -193,10 +195,11 @@ const updateProduct = async function (req, res) {
 const getCart = async function (req, res) {
     try {
         let userId = req.params.userId
+
+        if (!keyValid(userId) || !isValidObjectId(userId)) return res.status(400).send({ status: false, message: "Please enter UserId and also valid userId" })
         if (!userId) {
             return res.status(400).send({ status: false, message: "enter a user Id  first", });
         }
-
 
         const isValidUser = await userModel.findOne({ _id: userId, isDeleted: false })
         if (!isValidUser) {
@@ -235,11 +238,11 @@ const deleteCartByUserId = async function (req, res) {
         if (!existUser) return res.status(400).send({ status: false, message: "No user found with this userId" })
 
         if (existUser._id.toString() != req.userId)
-        return res.status(403).send({status:false, message:`unauthorized access! User info doesn't match`})
+            return res.status(403).send({ status: false, message: `unauthorized access! User info doesn't match` })
 
-        const userCart = await cartModel.findOne({ userId: userId, isDeleted:false })
+        const userCart = await cartModel.findOne({ userId: userId, isDeleted: false })
         if (!userCart) {
-            return res.status(400).send({ status: false, message: "cart not exist for this UserId"})
+            return res.status(400).send({ status: false, message: "cart not exist for this UserId" })
         } else {
             const deleteCart = await cartModel.findOneAndUpdate({ userId: userId }, { items: [], totalItems: 0, totalPrice: 0 }, { new: true })
             return res.status(204).send({ status: true, message: "deleted successfully", data: deleteCart })

@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const route = require('./routes/route');
-const multer= require("multer");
+const multer = require("multer");
 const bodyParser = require('body-parser');
 const app = express();
 

@@ -30,23 +30,18 @@ const createOrder = async function (req, res) {
         if (!isValidRequestBody(data)) {
             return res.status(400).send({ status: false, message: "Please provide valid requestBody" })
         }
-
-        if (!isValidObjectId(userId)) {
-            return res.status(400).send({ status: false, message: "please provide valid userId" })
-        }
+        if (!keyValid(userId) || !isValidObjectId(userId)) return res.status(400).send({ status: false, message: "Please enter UserId and also valid userId" })
         //DB call
-        let existUser = await userModel.findOne({ _id:userId })
+        let existUser = await userModel.findOne({ _id: userId })
         console.log(existUser)
         console.log(req.userId)
-        
+
         if (!existUser) {
             return res.status(404).send({ status: false, message: "User does not exist" })
         }
-        
         // //  Authorization
         if (existUser._id.toString() != req.userId)
             return res.status(403).send({ status: false, message: `Unauthorized access! User's info doesn't match` })
- 
 
         let { cartId, status, cancellable } = data
 
@@ -60,7 +55,7 @@ const createOrder = async function (req, res) {
         if (cancellable) {
             if ((typeof (cancellable) !== 'boolean')) return res.status(400).send({ status: false, message: "cancellable must be boolean, either true or false" })
         }
-       
+
         if (!cancellable && typeof (cancellable) == "undefined") {
             cancellable = true
         }
@@ -76,8 +71,8 @@ const createOrder = async function (req, res) {
 
         let arr = findCart.items
         if (arr.length == 0) return res.status(400).send({ status: false, message: "cart is empty add's some items" })
-        let totalQuantity = 0
 
+        let totalQuantity = 0
         for (let i = 0; i < arr.length; i++) {
             totalQuantity = totalQuantity + arr[i].quantity
         }
@@ -95,10 +90,10 @@ const createOrder = async function (req, res) {
 
         const order = await orderModel.create(orderDetails)
 
-        await cartModel.findOneAndUpdate({ _id: cartId, userId: userId}, { items: [], totalPrice: 0, totalItems: 0 })
-     
+        await cartModel.findOneAndUpdate({ _id: cartId, userId: userId }, { items: [], totalPrice: 0, totalItems: 0 })
 
-        return res.status(201).send({ status: true, message: "Success", data:order})
+
+        return res.status(201).send({ status: true, message: "Success", data: order })
 
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message })
@@ -114,9 +109,7 @@ const updateOrder = async function (req, res) {
         if (!isValidRequestBody(data)) {
             return res.status(400).send({ status: false, message: "Please provide data in the body" })
         }
-        if (!keyValid(userId) || !isValidObjectId(userId)) {
-            return res.status(400).send({ status: false, message: "Please provide valid userId" })
-        }
+        if (!keyValid(userId) || !isValidObjectId(userId)) return res.status(400).send({ status: false, message: "Please enter UserId and also valid userId" })
         //db call
         const existUser = await userModel.findOne({ _Id: userId })
         if (!existUser) return res.status(404).send({ status: false, message: "userId doesn't exist" })
@@ -132,7 +125,7 @@ const updateOrder = async function (req, res) {
         }
 
         //db call
-        const findOrder = await orderModel.findOne({ _id: orderId, userId: userId, isDeleted:false })
+        const findOrder = await orderModel.findOne({ _id: orderId, userId: userId, isDeleted: false })
         if (!findOrder) return res.status(404).send({ status: false, message: "Order not found" })
 
         if (status) {
@@ -143,7 +136,7 @@ const updateOrder = async function (req, res) {
 
         if (status == "cancelled") {
             if (findOrder.cancellable == true) {
-                const updatedOrder = await orderModel.findOneAndUpdate({ _id: orderId }, { status: status }, { new: true }).select({isDeleted:0})
+                const updatedOrder = await orderModel.findOneAndUpdate({ _id: orderId }, { status: status }, { new: true }).select({ isDeleted: 0 })
                 return res.status(200).send({ status: true, message: "Order cancelled sucessfully", data: updatedOrder })
             } else {
                 return res.status(400).send({ status: false, message: "order can't be cancelled" })
@@ -151,7 +144,7 @@ const updateOrder = async function (req, res) {
         }
 
         if (status == "completed") {
-            const updatedOrder = await orderModel.findOneAndUpdate({ _id: orderId }, { status: status }, { new: true }).select({isDeleted:0})
+            const updatedOrder = await orderModel.findOneAndUpdate({ _id: orderId }, { status: status }, { new: true }).select({ isDeleted: 0 })
             return res.status(200).send({ status: true, message: "Order compeletd sucessfully", data: updatedOrder })
         }
 

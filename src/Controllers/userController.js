@@ -44,7 +44,7 @@ const createUser = async function (req, res) {
         let { fname, lname, email, address, password, phone } = data
 
 
-       // --------------------------------------VALIDATION FOR CREATING USERS---------------------------------------------------------//
+        // --------------------------------------VALIDATION FOR CREATING USERS---------------------------------------------------------//
         if (!keyValid(fname) || !NameRegex.test(fname)) return res.status(400).send({ status: false, message: "Please enter fname" })
         if (!keyValid(lname) || !NameRegex.test(lname)) return res.status(400).send({ status: false, message: "Please enter lname" })
 
@@ -94,13 +94,13 @@ const createUser = async function (req, res) {
         //------------------------------UPLOADING FILES TO AWS-S3----------------------------------------------------------------------//
         let uploadedFileURL = await awsConfig.uploadFile(files[0])
         data.profileImage = uploadedFileURL
-        
+
         //------------------------------PASSWORD BCRYPTING------------------------------------------------------------------------------//
         let saltRounds = await bcrypt.genSalt(10)
         let encryptedPassword = await bcrypt.hash(password, saltRounds)
 
         //------------------------------STRUCTURING DATA-------------------------------------------------------------------------------//      
-          let data1 = {
+        let data1 = {
             fname: fname,
             lname: lname,
             email: email,
@@ -110,7 +110,7 @@ const createUser = async function (req, res) {
             address: address
 
         }
-        
+
         //-----------------------------CREATING DATA-------------------------------------------------------------------------------//
         const createUser = await userModel.create(data1)
         return res.status(201).send({ status: true, data: createUser })
@@ -136,7 +136,7 @@ const loginUser = async (req, res) => {
         if (!keyValid(password)) {
             return res.status(400).send({ status: false, message: "Password is required" })
         }
-        
+
         const userEmail = await userModel.findOne({ email: email })
         if (!userEmail) return res.status(401).send({ status: false, message: "Invalid EmailId" })
 
@@ -156,13 +156,13 @@ const loginUser = async (req, res) => {
 const fetchData = async (req, res) => {
     try {
         let userId = req.params.userId
-        if(!isValidObjectId(userId)) return res.status(400).send({status:false, msg:"UserId is Invalid!!!"})
+        if (!isValidObjectId(userId)) return res.status(400).send({ status: false, msg: "UserId is Invalid!!!" })
 
         let findUser = await userModel.findOne({ _id: userId })
         if (!findUser) return res.status(404).send({ status: false, message: `${userId} doesn't exist` })
-        
-        if(req.userId != findUser._id)
-           return res.status(401).send({status:false , msg:"USER NOT AUTHORISED!!"})
+
+        if (req.userId != findUser._id)
+            return res.status(401).send({ status: false, msg: "USER NOT AUTHORISED!!" })
 
         res.status(200).send({ status: true, message: "User profile details", data: findUser })
     }
@@ -179,18 +179,19 @@ const updateData = async (req, res) => {
         let files = req.files
 
         //-----------------------------VALIDATING USERID-----------------------------------------------------//
-        if(!isValidObjectId(userId)) return res.status(400).send({status:false, msg:"UserId is Invalid!!!"})
-
-        let oldUserData = await userModel.findOne({_id:userId})
-        if (!oldUserData) return res.status(404).send({ status: false, message: `${userId} doesn't exist` })
-      
-        //----------------------------AUTHORIZATION ----------------------------------------------------------//
-        if(req.userId != oldUserData._id)
-           return res.status(401).send({status:false , msg:"USER NOT AUTHORISED!!"})
 
         if (!isValidRequestBody(data)) {
             return res.status(400).send({ status: false, message: "Please provide valid requestBody" })
         }
+
+        if (!keyValid(userId) || !isValidObjectId(userId)) return res.status(400).send({ status: false, message: "Please enter userId and also valid userId" })
+
+        let oldUserData = await userModel.findOne({ _id: userId })
+        if (!oldUserData) return res.status(404).send({ status: false, message: `${userId} doesn't exist` })
+
+        //----------------------------AUTHORIZATION ----------------------------------------------------------//
+        if (req.userId != oldUserData._id)
+            return res.status(401).send({ status: false, msg: "USER NOT AUTHORISED!!" })
 
         if (!data) return res.status(400).send({ status: false, message: "Data is not present in request body" })
         if (data.fname) {
@@ -244,29 +245,29 @@ const updateData = async (req, res) => {
                     return res.status(400).send({ status: false, message: "Invalid Billing pincode" })
             }
         }
-          let obj = {}
+        let obj = {}
         //----------------------------UPDATING DATA----------------------------------------------------------//   
         let updateUser = await userModel.findOneAndUpdate({ _id: userId }, {
-           
-                fname: data.fname,
-                lname: data.lname,
-                email: data.email,
-                profileImage: data.profileImage,
-                phone: data.phone,
-                password: data.password,
-                address: {
-                    shipping: {
-                        street: data.address?.shipping?.street || oldUserData.address.shipping.street,
-                        city: data.address?.shipping?.city || oldUserData.address.shipping.city,
-                        pincode: data.address?.shipping?.pincode || oldUserData.address.shipping.pincode
-                    },
-                    billing: {
-                        street: data.address?.billing?.street || oldUserData.address.billing.street,
-                        city: data.address?.billing?.city || oldUserData.address.billing.city,
-                        pincode: data.address?.billing?.pincode || oldUserData.address.billing.pincode
-                    }
+
+            fname: data.fname,
+            lname: data.lname,
+            email: data.email,
+            profileImage: data.profileImage,
+            phone: data.phone,
+            password: data.password,
+            address: {
+                shipping: {
+                    street: data.address?.shipping?.street || oldUserData.address.shipping.street,
+                    city: data.address?.shipping?.city || oldUserData.address.shipping.city,
+                    pincode: data.address?.shipping?.pincode || oldUserData.address.shipping.pincode
+                },
+                billing: {
+                    street: data.address?.billing?.street || oldUserData.address.billing.street,
+                    city: data.address?.billing?.city || oldUserData.address.billing.city,
+                    pincode: data.address?.billing?.pincode || oldUserData.address.billing.pincode
                 }
-            
+            }
+
         }, { new: true })
         if (!updateUser) return res.status(404).send({ status: false, message: `${userId} doesn't exist` })
 

@@ -107,25 +107,6 @@ const productByFilter = async function (req, res) {
             let asize = size.split(",")
             console.log(asize)
 
-            // if (asize.length > 1) {
-            //     let arr = []
-
-            //     for (let i = 0; i < asize.length; i++) {
-            //         if (["S", "XS", "M", "X", "L", "XXL", "XL"].indexOf(asize[i]) == -1) {
-            //             return res
-            //                 .status(400)
-            //                 .send({ status: false, message: "size should be valid" });
-            //         }
-            //         if (["S", "XS", "M", "X", "L", "XXL", "XL"].includes(asize[i])) {
-            //             // obj.availableSizes=asize[i]
-            //             arr.push(asize[i])
-            //         }
-            //     }
-            //     let newArr = arr.map((x) => { return { availableSizes: x } })
-            //     console.log(newArr)
-            //     filter.availableSizes = { $all: newArr }
-            //     // console.log(newArr)
-            // }
             filter.availableSizes = asize[0]
         }
         if (priceGreaterThan) {
@@ -174,7 +155,6 @@ const productByFilter = async function (req, res) {
 }
 
 
-
 const productById = async function (req, res) {
 
     try {
@@ -187,7 +167,7 @@ const productById = async function (req, res) {
             return res.status(400).send({ status: false, message: "please enter valid productId" })
         }
         //DB call
-        const allProduct = await productModel.findOne({ _id: productId, isdeleted: false })
+        const allProduct = await productModel.findOne({ _id: productId, isDeleted: false })
         if (!allProduct) {
             return res.status(404).send({ status: false, message: "Product not found" })
         }
@@ -208,11 +188,13 @@ const updateProduct = async function (req, res) {
         console.log(Data)
         let files = req.files
 
-        if (!isValidObjectId(productId))
-            return res.status(400).send({ status: false, message: "Please enter valid Id" })
-
-        if (!isValidRequestBody(Data) && !files)
+        if (!isValidRequestBody(Data))
             return res.status(400).send({ status: false, message: "Please provide data" })
+
+        if (!files || files.length == 0) return res.status(400).send({ status: false, message: "Please enter image file!!" })
+
+        if (!keyValid(productId) || !isValidObjectId(productId)) return res.status(400).send({ status: false, message: "Please enter productId and also valid productId" })
+
         //db call 
         let productDetails = await productModel.findOne({ _id: productId, isDeleted: false })
 
@@ -305,8 +287,8 @@ const deleteProduct = async (req, res) => {
         const productId = req.params.productId
 
         //validation for productId
-        if (!isValidObjectId(productId))
-            return res.status(400).send({ status: false, message: `${productId} is not a valid product id` })
+
+        if (!keyValid(productId) || !isValidObjectId(productId)) return res.status(400).send({ status: false, message: "Please enter productId and also valid productId" })
 
         const product = await productModel.findOne({ _id: productId })
 
@@ -316,7 +298,7 @@ const deleteProduct = async (req, res) => {
         if (product.isDeleted == true)
             return res.status(400).send({ status: true, message: `Product is either deleted or doesn't exist` })
 
-        const deletedoc = await productModel.findOneAndUpdate({ _id: productId }, { isDeleted: true, deletedAt: new Date() }, {new:true})
+        const deletedoc = await productModel.findOneAndUpdate({ _id: productId }, { isDeleted: true, deletedAt: new Date() }, { new: true })
 
         return res.status(200).send({ status: true, message: `Product deleted successfully.`, data: deletedoc })
     }
